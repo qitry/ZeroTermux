@@ -1539,7 +1539,6 @@ cd ~ &amp;&amp; pkg update -y \n
 
     <string name="back_menu_visible">Left/Right panel displays background image</string>
     <string name="back_menu_visible_summary">You must ensure that the following path:\n~Ztinfo/menuBack/\ncontains left.png and right.png</string>
-    <string name="text_shadow_enable">Enable text contrast</string>
 
     <string name="guide_zerotermux_settings_agreement">ZeroTermux Terms of Use</string>
     <string name="guide_zerotermux_previous">Back</string>

@@ -45,16 +45,13 @@ class BeautifySettingDialog : BaseDialogDown {
     private var mBackMenuVisible: Switch? = null
     private var mBlurSwitch: Switch? = null
     private var mBlurSeekBar: SeekBar? = null
-    private var mBlurLabel: TextView? = null
-    private var mTextShadowSeekBar: SeekBar? = null
-    private var mTextShadowSwitch: Switch? = null
+    private var mBlurStrengthRow: View? = null
 
     private var fontColor:Int = Color.parseColor("#ffffff")
     private var fontColorProgress:Int = 0
     private val LOG_TAG = "Termux--Apk:BeautifySettingDialog"
 
     private var mOnBlurChangeListener: OnBlurChangeListener? = null
-    private var mOnTextShadowChangeListener: OnTextShadowChangeListener? = null
 
     constructor(context: Context) : super(context)
     constructor(context: Context, themeResId: Int) : super(context, themeResId)
@@ -71,9 +68,7 @@ class BeautifySettingDialog : BaseDialogDown {
         back_text_show_switch = mView.findViewById(R.id.back_text_show_switch)
         mBlurSwitch = mView.findViewById(R.id.blur_switch)
         mBlurSeekBar = mView.findViewById(R.id.blur_seekbar)
-        mBlurLabel = mView.findViewById(R.id.blur_label)
-        mTextShadowSeekBar = mView.findViewById(R.id.text_shadow_seekbar)
-        mTextShadowSwitch = mView.findViewById(R.id.text_shadow_switch)
+        mBlurStrengthRow = mView.findViewById(R.id.blur_strength_row)
         setColorAll()
         initProgress()
     }
@@ -86,9 +81,6 @@ class BeautifySettingDialog : BaseDialogDown {
 
         val blurEnabled = SaveData.getStringOther("blur_enabled")
         val blurRadius = SaveData.getStringOther("blur_radius")
-        val textShadowStrength = SaveData.getStringOther("text_shadow_strength")
-        val textShadowEnabled = SaveData.getStringOther("text_shadow_enabled")
-
         if(!(stringOther == null || stringOther.isEmpty() || stringOther == "def")){
             try {
                 val toInt = stringOther.toInt()
@@ -115,22 +107,12 @@ class BeautifySettingDialog : BaseDialogDown {
 
         val blurOn = blurEnabled != null && blurEnabled == "true"
         mBlurSwitch?.isChecked = blurOn
-        mBlurSeekBar?.visibility = if (blurOn) View.VISIBLE else View.GONE
-        mBlurLabel?.visibility = if (blurOn) View.VISIBLE else View.GONE
+        mBlurStrengthRow?.visibility = if (blurOn) View.VISIBLE else View.GONE
         if (!(blurRadius == null || blurRadius.isEmpty() || blurRadius == "def")) {
             try {
                 mBlurSeekBar?.progress = blurRadius.toInt()
             } catch (e: Exception) { }
         }
-        if (!(textShadowStrength == null || textShadowStrength.isEmpty() || textShadowStrength == "def")) {
-            try {
-                mTextShadowSeekBar?.progress = textShadowStrength.toInt()
-            } catch (e: Exception) { }
-        }
-        val textShadowOn = textShadowEnabled != "false"
-        mTextShadowSwitch?.isChecked = textShadowOn
-        mTextShadowSeekBar?.isEnabled = textShadowOn
-
         val fileImg = File("${FileUrl.mainConfigImg}/back.jpg")
         Log.e(LOG_TAG, "initProgress: check jpg exists: " + fileImg.exists())
         if(fileImg.exists()){
@@ -208,8 +190,7 @@ class BeautifySettingDialog : BaseDialogDown {
         }
 
         mBlurSwitch?.setOnCheckedChangeListener { _, isChecked ->
-            mBlurSeekBar?.visibility = if (isChecked) View.VISIBLE else View.GONE
-            mBlurLabel?.visibility = if (isChecked) View.VISIBLE else View.GONE
+            mBlurStrengthRow?.visibility = if (isChecked) View.VISIBLE else View.GONE
             SaveData.saveStringOther("blur_enabled", if (isChecked) "true" else "false")
             mOnBlurChangeListener?.onBlurChanged(
                 if (isChecked) mBlurSeekBar?.progress ?: 10 else 0
@@ -221,25 +202,6 @@ class BeautifySettingDialog : BaseDialogDown {
                 if (fromUser && mBlurSwitch?.isChecked == true) {
                     SaveData.saveStringOther("blur_radius", "$progress")
                     mOnBlurChangeListener?.onBlurChanged(progress)
-                }
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        mTextShadowSwitch?.setOnCheckedChangeListener { _, isChecked ->
-            mTextShadowSeekBar?.isEnabled = isChecked
-            SaveData.saveStringOther("text_shadow_enabled", if (isChecked) "true" else "false")
-            mOnTextShadowChangeListener?.onTextShadowChanged(
-                if (isChecked) mTextShadowSeekBar?.progress ?: 50 else 0
-            )
-        }
-
-        mTextShadowSeekBar?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser && mTextShadowSwitch?.isChecked == true) {
-                    SaveData.saveStringOther("text_shadow_strength", "$progress")
-                    mOnTextShadowChangeListener?.onTextShadowChanged(progress)
                 }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -306,14 +268,6 @@ class BeautifySettingDialog : BaseDialogDown {
 
     public fun setOnBlurChangeListener(listener: OnBlurChangeListener) {
         mOnBlurChangeListener = listener
-    }
-
-    public fun setOnTextShadowChangeListener(listener: OnTextShadowChangeListener) {
-        mOnTextShadowChangeListener = listener
-    }
-
-    public interface OnTextShadowChangeListener {
-        fun onTextShadowChanged(strength: Int)
     }
 
     public interface FontColorChange{

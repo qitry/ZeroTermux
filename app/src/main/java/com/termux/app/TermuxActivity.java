@@ -2127,11 +2127,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             BackgroundBlurUtils.applyBlur(back_img, radius);
         });
 
-        mBeautifySettingDialog.setOnTextShadowChangeListener(strength -> {
-            TerminalRenderer.TEXT_SHADOW_PROGRESS = strength;
-            mTerminalView.invalidate();
-        });
-
         mBeautifySettingDialog.setOnMenuBackListener(() -> {
             showMenuBack();
         });
@@ -2663,7 +2658,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         back_img.setVisibility(View.GONE);
         back_color.setVisibility(View.GONE);
         TerminalRenderer.COLOR_TEXT = Color.parseColor("#ffffff");
-        TerminalRenderer.TEXT_SHADOW_PROGRESS = 0;
         ExtraKeysView.DEFAULT_BUTTON_TEXT_COLOR = Color.parseColor("#ffffff");
         BackgroundBlurUtils.removeBlur(back_img);
         mTerminalView.invalidate();
@@ -2718,14 +2712,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             BackgroundBlurUtils.applyBlur(back_img, radius);
         } else {
             BackgroundBlurUtils.removeBlur(back_img);
-        }
-
-        String textShadowEnabled = SaveData.INSTANCE.getStringOther("text_shadow_enabled");
-        String textShadowStrength = SaveData.INSTANCE.getStringOther("text_shadow_strength");
-        if (textShadowEnabled != null && textShadowEnabled.equals("false")) {
-            TerminalRenderer.TEXT_SHADOW_PROGRESS = 0;
-        } else if (textShadowStrength != null && !textShadowStrength.isEmpty() && !textShadowStrength.equals("def")) {
-            try { TerminalRenderer.TEXT_SHADOW_PROGRESS = Integer.parseInt(textShadowStrength); } catch (Exception e) { }
         }
 
         setSummaryVisible();

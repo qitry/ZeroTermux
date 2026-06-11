@@ -24,7 +24,7 @@ public final class TerminalRenderer {
     private final Paint mTextPaint = new Paint();
 	// ZeroTermux add {@
     public static int COLOR_TEXT = Color.parseColor("#ffffff");
-    public static int TEXT_SHADOW_PROGRESS = 50;
+    public static int TEXT_SHADOW_PROGRESS = 0;
 	// @}
     /** The width of a single mono spaced character obtained by {@link Paint#measureText(String)} on a single 'X'. */
     final float mFontWidth;

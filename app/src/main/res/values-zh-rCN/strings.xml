@@ -1507,7 +1507,6 @@
 
     <string name="back_menu_visible">左/右栏目显示背景图片</string>
     <string name="back_menu_visible_summary">你必须确保路径:\n~Ztinfo/menuBack/\n路径下有 left.png 以及 right.png</string>
-    <string name="text_shadow_enable">启用文字对比度</string>
 
     <string name="guide_zerotermux_settings_agreement">ZeroTermux 使用协议</string>
     <string name="guide_zerotermux_previous">返回</string>
