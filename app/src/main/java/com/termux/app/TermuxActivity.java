@@ -156,6 +156,7 @@ import com.termux.zerocore.utils.VideoUtils;
 import com.termux.zerocore.utils.WindowUtils;
 import com.termux.zerocore.view.BoomWindow;
 import com.termux.zerocore.zero.engine.ZeroCoreManage;
+import com.zp.z_file.content.ZFileContentKt;
 import com.zp.z_file.ui.ZFileListFragment;
 import com.zp.z_file.zerotermux.ZTConfig;
 
@@ -1237,6 +1238,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private LinearLayout key_bord;
     private TextView service_status;
     private TextView service_eg;
+    private final HashMap<String, String> mSessionFilePaths = new HashMap<>();
     private TextView msg_tv;
     private TextView ip_status;
     private TextView qq_group_tv;
@@ -2021,6 +2023,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     private void fragmentManager(int index) {
+        // 保存当前文件管理器路径（在移除 Fragment 之前）
+        saveCurrentFileManagerPath();
+
         FragmentTransaction fragmentTransaction = getSupportFragmentManager()
             .beginTransaction();
 
@@ -2054,6 +2059,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         switch (index) {
             case 0:
+                // 为当前会话恢复保存的文件管理器路径
+                restoreFileManagerPathForCurrentSession();
                 LogUtils.e(TAG, "fragmentManager switch ZFileListFragment. ");
                 fragmentTransaction.replace(R.id.frame_file, ZFileListFragment.newInstance(), "ZFileListFragment")
                     .commitAllowingStateLoss();
@@ -2075,6 +2082,39 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 break;
         }
         ZTConfig.INSTANCE.setCloseListener(() -> getDrawer().smoothClose());
+    }
+
+    public String getSessionKey(TerminalSession session) {
+        if (session == null) return null;
+        return "session_" + System.identityHashCode(session);
+    }
+
+    private String getCurrentSessionKey() {
+        return getSessionKey(getCurrentSession());
+    }
+
+    public void saveCurrentFileManagerPath() {
+        Fragment fragment = getSupportFragmentManager().findFragmentByTag("ZFileListFragment");
+        if (fragment != null && fragment.isAdded()) {
+            try {
+                String path = (String) fragment.getClass()
+                    .getMethod("getThisFilePath").invoke(fragment);
+                String key = getCurrentSessionKey();
+                if (key != null && path != null && !path.isEmpty()) {
+                    mSessionFilePaths.put(key, path);
+                }
+            } catch (Exception e) {
+                LogUtils.e(TAG, "saveCurrentFileManagerPath error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void restoreFileManagerPathForCurrentSession() {
+        String key = getCurrentSessionKey();
+        if (key != null && mSessionFilePaths.containsKey(key)) {
+            String path = mSessionFilePaths.get(key);
+            ZFileContentKt.getZFileConfig().setFilePath(path);
+        }
     }
 
     private void locaBroadcast() {
@@ -2519,6 +2559,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             public void onSwipeClosed(SmartSwipeWrapper wrapper, SwipeConsumer consumer, int direction) {
                 super.onSwipeClosed(wrapper, consumer, direction);
                 mTerminalView.requestFocus();
+                saveCurrentFileManagerPath();
             }
         };
 
