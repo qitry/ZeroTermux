@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
@@ -156,7 +157,6 @@ import com.termux.zerocore.utils.VideoUtils;
 import com.termux.zerocore.utils.WindowUtils;
 import com.termux.zerocore.view.BoomWindow;
 import com.termux.zerocore.zero.engine.ZeroCoreManage;
-import com.zp.z_file.content.ZFileContentKt;
 import com.zp.z_file.ui.ZFileListFragment;
 import com.zp.z_file.zerotermux.ZTConfig;
 
@@ -1239,6 +1239,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private TextView service_status;
     private TextView service_eg;
     private final HashMap<String, String> mSessionFilePaths = new HashMap<>();
+    private String mFileManagerSessionKey = null;
     private TextView msg_tv;
     private TextView ip_status;
     private TextView qq_group_tv;
@@ -2023,7 +2024,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     private void fragmentManager(int index) {
-        // 保存当前文件管理器路径（在移除 Fragment 之前）
+        // 保存旧 Fragment 的路径（使用 mFileManagerSessionKey 确保准确归属）
         saveCurrentFileManagerPath();
 
         FragmentTransaction fragmentTransaction = getSupportFragmentManager()
@@ -2059,12 +2060,29 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         switch (index) {
             case 0:
-                // 为当前会话恢复保存的文件管理器路径
-                restoreFileManagerPathForCurrentSession();
                 LogUtils.e(TAG, "fragmentManager switch ZFileListFragment. ");
-                fragmentTransaction.replace(R.id.frame_file, ZFileListFragment.newInstance(), "ZFileListFragment")
+                ZFileListFragment zf = ZFileListFragment.newInstance();
+                fragmentTransaction.replace(R.id.frame_file, zf, "ZFileListFragment")
                     .commitAllowingStateLoss();
                 LogUtils.e(TAG, "fragmentManager switch ZFileListFragment deno. ");
+
+                // 更新文件管理器归属的会话
+                mFileManagerSessionKey = getCurrentSessionKey();
+
+                // Fragment 创建后，导航到当前会话保存的目录
+                String savedPath = mSessionFilePaths.get(mFileManagerSessionKey);
+                if (savedPath != null) {
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        try {
+                            if (zf.isAdded()) {
+                                zf.getClass().getMethod("getData", String.class)
+                                    .invoke(zf, savedPath);
+                            }
+                        } catch (Exception e) {
+                            LogUtils.e(TAG, "navigate error: " + e.getMessage());
+                        }
+                    });
+                }
                 break;
             case 1:
                 LogUtils.e(TAG, "fragmentManager switch DeepSeekTransitFragment. ");
@@ -2094,26 +2112,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     public void saveCurrentFileManagerPath() {
+        if (mFileManagerSessionKey == null) return;
         Fragment fragment = getSupportFragmentManager().findFragmentByTag("ZFileListFragment");
         if (fragment != null && fragment.isAdded()) {
             try {
                 String path = (String) fragment.getClass()
                     .getMethod("getThisFilePath").invoke(fragment);
-                String key = getCurrentSessionKey();
-                if (key != null && path != null && !path.isEmpty()) {
-                    mSessionFilePaths.put(key, path);
+                if (path != null && !path.isEmpty()) {
+                    mSessionFilePaths.put(mFileManagerSessionKey, path);
                 }
             } catch (Exception e) {
-                LogUtils.e(TAG, "saveCurrentFileManagerPath error: " + e.getMessage());
+                LogUtils.e(TAG, "save error: " + e.getMessage());
             }
-        }
-    }
-
-    private void restoreFileManagerPathForCurrentSession() {
-        String key = getCurrentSessionKey();
-        if (key != null && mSessionFilePaths.containsKey(key)) {
-            String path = mSessionFilePaths.get(key);
-            ZFileContentKt.getZFileConfig().setFilePath(path);
         }
     }
 
@@ -2559,7 +2569,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             public void onSwipeClosed(SmartSwipeWrapper wrapper, SwipeConsumer consumer, int direction) {
                 super.onSwipeClosed(wrapper, consumer, direction);
                 mTerminalView.requestFocus();
-                saveCurrentFileManagerPath();
             }
         };
 
